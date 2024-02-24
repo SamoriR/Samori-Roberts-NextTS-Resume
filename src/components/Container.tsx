@@ -38,6 +38,6 @@ const Container = (props: any) => {
       </InnerContainer>
     </OuterContainer>
   );
-};``
+};
 
 export default Container;
