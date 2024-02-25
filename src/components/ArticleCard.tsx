@@ -14,7 +14,7 @@ const ArticleCard = ({
   article: Article;
 }) => (
   <Card as="article">
-    <CardTitle href={`/article/${article.id}`}>
+    <CardTitle href={`/articles/${article.id}`}>
       {article.title}
     </CardTitle>
     <CardDate as="time" dateTime={article.date} decorate>
