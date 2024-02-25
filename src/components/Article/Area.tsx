@@ -1,3 +1,4 @@
+/* eslint-disable react/no-array-index-key */
 import React from 'react';
 import { ArrowLeftIcon } from '@heroicons/react/20/solid';
 
@@ -45,8 +46,8 @@ const ArticlePage = ({
             </time>
           </header>
           <div>
-            {content.map((documentNode) => (
-              <ArticleSection node={documentNode} />
+            {content.map((documentNode, i) => (
+              <ArticleSection key={`${heading}-${i}`} node={documentNode} />
             ))}
           </div>
         </article>
