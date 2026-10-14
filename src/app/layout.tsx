@@ -19,6 +19,7 @@ const cormorant = CormorantGaramond({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://samorir.dev'),
   title: "Samori Roberts's Resume Site",
   description: 'The career of Samori Roberts: software engineer, founder, and builder.',
 };
