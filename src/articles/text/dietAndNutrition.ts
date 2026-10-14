@@ -1,4 +1,4 @@
-import dietAndNutritionImg from '@/images/photos/articles/diet-and-nutrition.avif';
+import dietAndNutritionImg from '@/images/photo-article-diet-and-nutrition.avif';
 import { Article } from '../types';
 
 const dietAndNutrition: Article = {

@@ -1,4 +1,4 @@
-import monteCarloImg from '@/images/photos/articles/monte-carlo.png';
+import monteCarloImg from '@/images/photo-article-monte-carlo.png';
 import { Article } from '../types';
 
 const monteCarloSimulationPage: Article = {

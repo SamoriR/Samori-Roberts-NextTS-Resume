@@ -6,9 +6,7 @@ import DesktopNavBar from './DesktopNav';
 import Avatar from './Avatar';
 
 const NAVIGATION_ROUTES = [
-  'about',
   'articles',
-  'projects',
 ];
 
 const NavigationBar = () => (

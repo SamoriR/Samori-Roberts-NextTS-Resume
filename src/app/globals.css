@@ -30,4 +30,68 @@ body {
   .text-balance {
     text-wrap: balance;
   }
+
+  .scrollbar-none {
+    scrollbar-width: none;
+  }
+
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Title-screen home page */
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes titleIn {
+  from { opacity: 0; filter: blur(8px); letter-spacing: 0.32em; }
+  to { opacity: 1; filter: blur(0); letter-spacing: 0.16em; }
+}
+
+@keyframes drift {
+  0% { opacity: 0; transform: translate(0, 0); }
+  15% { opacity: 0.8; }
+  85% { opacity: 0.6; }
+  100% { opacity: 0; transform: translate(30px, -420px); }
+}
+
+@keyframes mist {
+  0% { transform: translateX(-8%); }
+  50% { transform: translateX(8%); }
+  100% { transform: translateX(-8%); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 0.9; }
+}
+
+@keyframes grow {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+.reel::-webkit-scrollbar {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* ambient layers: skip ember/mist/beam animation entirely */
+  .amb-anim {
+    animation: none !important;
+  }
+
+  /* motion-heavy entrances become plain fades */
+  .rm-fade {
+    animation-name: fadeIn !important;
+  }
 }

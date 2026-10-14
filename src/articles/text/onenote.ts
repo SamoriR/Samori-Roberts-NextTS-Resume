@@ -1,4 +1,4 @@
-import onenoteImg from '@/images/photos/articles/onenote.gif';
+import onenoteImg from '@/images/photo-article-onenote.gif';
 import { Article } from '../types';
 
 const onenotePage: Article = {
