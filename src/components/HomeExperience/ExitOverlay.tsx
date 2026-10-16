@@ -1,6 +1,8 @@
 import React from 'react';
 
-import { CINZEL, CORMORANT, EMAIL } from './constants';
+import {
+  CINZEL, CORMORANT, EMAIL, rem,
+} from './constants';
 
 const ExitOverlay = ({ isMobile }: { isMobile: boolean }) => (
   <div
@@ -13,15 +15,15 @@ const ExitOverlay = ({ isMobile }: { isMobile: boolean }) => (
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
-      gap: 16,
-      padding: '0 24px',
+      gap: rem(16),
+      padding: `0 ${rem(24)}`,
       animation: 'fadeIn 1.1s ease both',
     }}
   >
     <div
       style={{
         fontFamily: CINZEL,
-        fontSize: isMobile ? 17 : 22,
+        fontSize: isMobile ? rem(17) : rem(22),
         letterSpacing: '.2em',
         color: '#eef3f6',
         textAlign: 'center',
@@ -35,7 +37,7 @@ const ExitOverlay = ({ isMobile }: { isMobile: boolean }) => (
       style={{
         fontFamily: CORMORANT,
         fontStyle: 'italic',
-        fontSize: 17,
+        fontSize: rem(17),
         color: '#8fa6b4',
         animation: 'fadeIn 1s ease 1.3s both',
       }}

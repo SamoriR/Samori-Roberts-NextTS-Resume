@@ -6,7 +6,7 @@ import React, {
 
 import jobs, { Job, JobType } from '@/data/jobs';
 import {
-  CINZEL, CORMORANT, EASE_EMPH, EASE_OUT, FULL_T, MENU, mix, SHORT_T,
+  CINZEL, CORMORANT, EASE_EMPH, EASE_OUT, FULL_T, heroPx, MENU, mix, rem, SHORT_T,
 } from './constants';
 import { Diamond } from './ui';
 import Ambient from './Ambient';
@@ -177,10 +177,14 @@ const HomeExperience = () => {
       rect.lx = (g.left + g.width / 2) - (r.left + r.width / 2);
       rect.ly = (g.top + g.height / 2) - (r.top + r.height / 2);
     }
-    // Derived from the nav name's rendered position so the breadcrumb sits past it.
+    // Per large-screens handoff:
+    //   left = 28·S + 628·heroScale·(navScale/B) + 25·S
+    //   top  = (navTop + 62·navScale − 14) · S
+    // The nav-name block scales by heroScale internally, then transforms by
+    // navScale/B, so its on-screen width is 628 × heroScale × (navScale/B).
     const nav = {
-      l: vp.navLeft + 628 * vp.navScale + 25,
-      t: vp.navTop + 62 * vp.navScale - 14,
+      l: vp.navLeft * vp.S + 628 * vp.heroScale * (vp.navScale / vp.B) + 25 * vp.S,
+      t: (vp.navTop + 62 * vp.navScale - 14) * vp.S,
     };
     clearDetTimers();
     setDet({
@@ -190,7 +194,7 @@ const HomeExperience = () => {
     detTimers.current.push(setTimeout(() => phase('full'), 380));
     detTimers.current.push(setTimeout(() => phase('logo'), 930));
     detTimers.current.push(setTimeout(() => phase('nav'), 1380));
-  }, [det, vp.navLeft, vp.navScale, vp.navTop]);
+  }, [det, vp.navLeft, vp.navScale, vp.navTop, vp.S, vp.B, vp.heroScale]);
 
   // Keep the overlay sized to the live viewport (and nav slot repositioned on breakpoint flip).
   useEffect(() => {
@@ -201,13 +205,13 @@ const HomeExperience = () => {
       W: scene ? scene.offsetWidth : d.W,
       H: scene ? scene.offsetHeight : d.H,
       nav: {
-        l: vp.navLeft + 628 * vp.navScale + 25,
-        t: vp.navTop + 62 * vp.navScale - 14,
+        l: vp.navLeft * vp.S + 628 * vp.heroScale * (vp.navScale / vp.B) + 25 * vp.S,
+        t: (vp.navTop + 62 * vp.navScale - 14) * vp.S,
       },
     } : d));
     // We intentionally omit `det` from deps: it would re-run on every job swap.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [vp.w, vp.h, vp.navLeft, vp.navTop, vp.navScale]);
+  }, [vp.w, vp.h, vp.navLeft, vp.navTop, vp.navScale, vp.S, vp.B, vp.heroScale]);
 
   const goToJob = useCallback((target: Job) => {
     if (!det || det.phase !== 'nav' || swapping) return;
@@ -338,10 +342,13 @@ const HomeExperience = () => {
               style={{
                 position: 'absolute',
                 zIndex: 5,
-                left: entered ? vp.navLeft : '50%',
-                top: entered ? vp.navTop : vp.titleTop,
+                // Nav position scales with S (same system as the rest of the UI).
+                left: entered ? rem(vp.navLeft) : '50%',
+                top: entered ? rem(vp.navTop) : vp.titleTop,
+                // The block itself is hero-scaled, so when entered we divide the
+                // transform scale by B to keep the on-screen size at S × navScale.
                 transform: entered
-                  ? `translateX(0) scale(${vp.navScale})`
+                  ? `translateX(0) scale(${vp.navScale / vp.B})`
                   : `translateX(${-50 * vp.titleScale}%) scale(${vp.titleScale})`,
                 transformOrigin: 'top left',
                 opacity: contentOpacity,
@@ -349,15 +356,16 @@ const HomeExperience = () => {
                 pointerEvents: 'none',
               }}
             >
+              {/* Title block: subtitle, name, divider all scale by heroScale. */}
               <div style={{
-                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: heroPx(14),
               }}
               >
                 <div style={{ opacity: fade, transition: 'opacity .5s ease' }}>
                   <div
                     style={{
                       fontFamily: CINZEL,
-                      fontSize: 13,
+                      fontSize: heroPx(13),
                       letterSpacing: '.4em',
                       color: '#8fa6b4',
                       animation: `fadeIn ${T.subDur} ease ${T.sub} both`,
@@ -378,10 +386,10 @@ const HomeExperience = () => {
                   style={{
                     fontFamily: CINZEL,
                     fontWeight: 600,
-                    fontSize: 54,
+                    fontSize: heroPx(54),
                     letterSpacing: '.16em',
                     color: '#eef3f6',
-                    textShadow: '0 0 24px rgba(200,225,240,.35)',
+                    textShadow: `0 0 ${heroPx(24)} rgba(200,225,240,.35)`,
                     whiteSpace: 'nowrap',
                     pointerEvents: nameActive ? 'auto' : 'none',
                     cursor: 'pointer',
@@ -398,8 +406,8 @@ const HomeExperience = () => {
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 12,
-                    width: 440,
+                    gap: heroPx(12),
+                    width: heroPx(440),
                     opacity: fade,
                     transition: 'opacity .5s ease',
                     animation: `fadeIn 1s ease ${T.div} both`,
@@ -414,7 +422,7 @@ const HomeExperience = () => {
                       animation: `grow 1.2s cubic-bezier(.6,0,.2,1) ${T.div} both`,
                     }}
                   />
-                  <Diamond size={7} filled={false} />
+                  <Diamond size={heroPx(7)} filled={false} />
                   <div
                     style={{
                       flex: 1,
@@ -437,7 +445,7 @@ const HomeExperience = () => {
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
-                gap: 6,
+                gap: rem(6),
                 opacity: fade,
                 pointerEvents: entered ? 'none' : 'auto',
                 transition: 'opacity .5s ease',
@@ -448,7 +456,7 @@ const HomeExperience = () => {
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
-                  gap: 6,
+                  gap: rem(6),
                   animation: `fadeIn 1s ease ${T.menu} both`,
                 }}
               >
@@ -465,10 +473,10 @@ const HomeExperience = () => {
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: 14,
+                      gap: rem(14),
                       cursor: 'pointer',
                       // Mobile tap target is at least 44px tall.
-                      padding: vp.isMobile ? '11px 8px' : '4px 8px',
+                      padding: vp.isMobile ? `${rem(11)} ${rem(8)}` : `${rem(4)} ${rem(8)}`,
                       background: 'none',
                       border: 'none',
                       outline: 'none',
@@ -478,11 +486,11 @@ const HomeExperience = () => {
                     <span
                       style={{
                         fontFamily: CINZEL,
-                        fontSize: 17,
+                        fontSize: rem(17),
                         letterSpacing: '.12em',
                         color: sel === i ? '#ffffff' : '#7d8f9a',
                         transition: 'color .25s',
-                        minWidth: 120,
+                        minWidth: rem(120),
                         textAlign: 'center',
                       }}
                     >
@@ -499,7 +507,7 @@ const HomeExperience = () => {
                 position: 'absolute',
                 left: 0,
                 right: 0,
-                bottom: 18,
+                bottom: rem(18),
                 textAlign: 'center',
                 opacity: fade,
                 transition: 'opacity .5s ease',
@@ -509,7 +517,7 @@ const HomeExperience = () => {
               <span
                 style={{
                   fontFamily: CINZEL,
-                  fontSize: 10,
+                  fontSize: rem(10),
                   letterSpacing: '.3em',
                   color: '#5b6b75',
                   animation: `pulse 2.4s ease-in-out ${T.hint} infinite both`,
@@ -559,10 +567,10 @@ const HomeExperience = () => {
                 position: 'absolute',
                 left: 0,
                 right: 0,
-                bottom: 14,
+                bottom: rem(14),
                 textAlign: 'center',
                 fontFamily: CORMORANT,
-                fontSize: 11.5,
+                fontSize: rem(11.5),
                 letterSpacing: '.04em',
                 color: '#6f8390',
                 animation: 'fadeIn 1s ease .8s both',

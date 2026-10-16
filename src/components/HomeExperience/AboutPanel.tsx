@@ -2,7 +2,7 @@ import React from 'react';
 
 import aboutImage from '@/images/avatar-2.jpg';
 import {
-  BIO, CINZEL, CORMORANT, EASE_OUT, LINKS, NOW,
+  BIO, CINZEL, CORMORANT, EASE_OUT, LINKS, NOW, rem,
 } from './constants';
 import { Diamond } from './ui';
 
@@ -10,7 +10,7 @@ const linkButtonOn = (el: HTMLElement) => {
   Object.assign(el.style, {
     color: '#ffffff',
     borderColor: 'rgba(207,227,238,.9)',
-    boxShadow: '0 0 14px rgba(200,225,240,.18)',
+    boxShadow: `0 0 ${rem(14)} rgba(200,225,240,.18)`,
   });
 };
 
@@ -25,20 +25,26 @@ const linkButtonOff = (el: HTMLElement) => {
 const AboutPanel = ({ w }: { w: number }) => {
   const column = w < 680;
   const narrow = w < 760;
-  let gap = 52;
-  if (column) gap = 28;
-  else if (narrow) gap = 36;
-  let padding = '0 60px';
-  if (column) padding = '12px 24px 24px';
-  else if (narrow) padding = '0 32px';
+  let gap = rem(52);
+  if (column) gap = rem(28);
+  else if (narrow) gap = rem(36);
+  let padding = `0 ${rem(60)}`;
+  if (column) padding = `${rem(12)} ${rem(24)} ${rem(24)}`;
+  else if (narrow) padding = `0 ${rem(32)}`;
+  // Shadow effect: on mobile the whole panel is the scroller, so fade the top
+  // and bottom edges to give content a soft shadow as it enters/leaves view.
+  const edgeMask = column
+    ? `linear-gradient(180deg, transparent 0, #000 ${rem(16)}, #000 calc(100% - ${rem(20)}), transparent)`
+    : undefined;
   return (
     <div
+      className={column ? 'reel' : undefined}
       style={{
         position: 'absolute',
         left: 0,
         right: 0,
-        top: 100,
-        bottom: 44,
+        top: rem(100),
+        bottom: rem(44),
         display: 'flex',
         flexDirection: column ? 'column' : 'row',
         alignItems: 'center',
@@ -47,6 +53,9 @@ const AboutPanel = ({ w }: { w: number }) => {
         pointerEvents: 'auto',
         padding,
         overflowY: 'auto',
+        scrollbarWidth: column ? 'none' : undefined,
+        WebkitMaskImage: edgeMask,
+        maskImage: edgeMask,
       }}
     >
       <div
@@ -55,21 +64,21 @@ const AboutPanel = ({ w }: { w: number }) => {
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          gap: 18,
+          gap: rem(18),
           animation: `fadeUp 1s ${EASE_OUT} .1s both`,
           flex: '0 0 auto',
         }}
       >
         <div
           style={{
-            width: 170,
-            height: 226,
+            width: rem(170),
+            height: rem(226),
             boxSizing: 'border-box',
-            padding: 6,
+            padding: rem(6),
             border: '1px solid rgba(143,166,180,.5)',
-            borderRadius: 3,
+            borderRadius: rem(3),
             background: 'linear-gradient(180deg, rgba(22,31,40,.88), rgba(7,10,14,.92))',
-            boxShadow: '0 12px 30px rgba(0,0,0,.6), 0 0 30px rgba(200,225,240,.06)',
+            boxShadow: `0 ${rem(12)} ${rem(30)} rgba(0,0,0,.6), 0 0 ${rem(30)} rgba(200,225,240,.06)`,
             position: 'relative',
           }}
         >
@@ -94,8 +103,8 @@ const AboutPanel = ({ w }: { w: number }) => {
             style={{
               position: 'absolute',
               left: '50%',
-              bottom: -5,
-              marginLeft: -5,
+              bottom: rem(-5),
+              marginLeft: rem(-5),
               border: '1px solid #cfe3ee',
             }}
           />
@@ -105,8 +114,8 @@ const AboutPanel = ({ w }: { w: number }) => {
           style={{
             display: 'grid',
             gridTemplateColumns: '1fr 1fr',
-            gap: 6,
-            width: 170,
+            gap: rem(6),
+            width: rem(170),
             animation: `fadeUp 1s ${EASE_OUT} .5s both`,
           }}
         >
@@ -120,14 +129,14 @@ const AboutPanel = ({ w }: { w: number }) => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: 7,
-                height: 30,
+                gap: rem(7),
+                height: rem(30),
                 boxSizing: 'border-box',
                 border: '1px solid rgba(143,166,180,.4)',
-                borderRadius: 2,
+                borderRadius: rem(2),
                 background: 'linear-gradient(180deg, rgba(22,31,40,.7), rgba(7,10,14,.85))',
                 fontFamily: CINZEL,
-                fontSize: 9,
+                fontSize: rem(9),
                 letterSpacing: '.2em',
                 textTransform: 'uppercase',
                 color: '#cfe3ee',
@@ -140,7 +149,7 @@ const AboutPanel = ({ w }: { w: number }) => {
               onFocus={(e) => linkButtonOn(e.currentTarget)}
               onBlur={(e) => linkButtonOff(e.currentTarget)}
             >
-              <Diamond size={3} style={{ boxShadow: '0 0 6px #cfe3ee' }} />
+              <Diamond size={3} style={{ boxShadow: `0 0 ${rem(6)} #cfe3ee` }} />
               {l.label}
             </a>
           ))}
@@ -150,11 +159,13 @@ const AboutPanel = ({ w }: { w: number }) => {
         style={{
           display: 'flex',
           flexDirection: 'column',
-          gap: 14,
+          gap: rem(14),
           width: '100%',
-          maxWidth: 440,
+          maxWidth: rem(440),
           minWidth: 0,
-          maxHeight: '100%',
+          // On mobile the outer container is the single scroll parent, so the text
+          // column grows naturally and nothing is pinned.
+          maxHeight: column ? 'none' : '100%',
           minHeight: 0,
         }}
       >
@@ -163,7 +174,7 @@ const AboutPanel = ({ w }: { w: number }) => {
           style={{
             display: 'flex',
             flexDirection: 'column',
-            gap: 8,
+            gap: rem(8),
             flex: '0 0 auto',
             animation: `fadeUp 1s ${EASE_OUT} .2s both`,
           }}
@@ -171,17 +182,17 @@ const AboutPanel = ({ w }: { w: number }) => {
           <div
             style={{
               fontFamily: CINZEL,
-              fontSize: 20,
+              fontSize: rem(20),
               fontWeight: 600,
               letterSpacing: '.2em',
               color: '#eef3f6',
-              textShadow: '0 0 18px rgba(200,225,240,.25)',
+              textShadow: `0 0 ${rem(18)} rgba(200,225,240,.25)`,
             }}
           >
             ABOUT
           </div>
           <div style={{
-            display: 'flex', alignItems: 'center', gap: 8, width: 150,
+            display: 'flex', alignItems: 'center', gap: rem(8), width: rem(150),
           }}
           >
             <Diamond filled={false} />
@@ -189,19 +200,19 @@ const AboutPanel = ({ w }: { w: number }) => {
           </div>
         </div>
         <div
-          className="reel"
+          className={column ? '' : 'reel'}
           style={{
             display: 'flex',
             flexDirection: 'column',
-            gap: 14,
+            gap: rem(14),
             minHeight: 0,
-            overflowY: 'auto',
+            overflowY: column ? 'visible' : 'auto',
             scrollbarWidth: 'none',
-            paddingBottom: 20,
-            paddingLeft: 8,
-            marginLeft: -8,
-            WebkitMaskImage: 'linear-gradient(180deg, #000 calc(100% - 20px), transparent)',
-            maskImage: 'linear-gradient(180deg, #000 calc(100% - 20px), transparent)',
+            paddingBottom: column ? 0 : rem(20),
+            paddingLeft: rem(8),
+            marginLeft: rem(-8),
+            WebkitMaskImage: column ? undefined : `linear-gradient(180deg, #000 calc(100% - ${rem(20)}), transparent)`,
+            maskImage: column ? undefined : `linear-gradient(180deg, #000 calc(100% - ${rem(20)}), transparent)`,
           }}
         >
           <p
@@ -209,7 +220,7 @@ const AboutPanel = ({ w }: { w: number }) => {
             style={{
               margin: 0,
               fontFamily: CORMORANT,
-              fontSize: 17,
+              fontSize: rem(17),
               lineHeight: 1.5,
               color: '#c9d6de',
               textWrap: 'pretty',
@@ -221,17 +232,17 @@ const AboutPanel = ({ w }: { w: number }) => {
           <div
             className="rm-fade"
             style={{
-              display: 'flex', flexDirection: 'column', gap: 6, animation: `fadeUp 1s ${EASE_OUT} .4s both`,
+              display: 'flex', flexDirection: 'column', gap: rem(6), animation: `fadeUp 1s ${EASE_OUT} .4s both`,
             }}
           >
             <div style={{
-              fontFamily: CINZEL, fontSize: 10, letterSpacing: '.3em', color: '#8fa6b4',
+              fontFamily: CINZEL, fontSize: rem(10), letterSpacing: '.3em', color: '#8fa6b4',
             }}
             >
               NOW
             </div>
             <p style={{
-              margin: 0, fontFamily: CORMORANT, fontSize: 16, lineHeight: 1.5, color: '#c9d6de', textWrap: 'pretty',
+              margin: 0, fontFamily: CORMORANT, fontSize: rem(16), lineHeight: 1.5, color: '#c9d6de', textWrap: 'pretty',
             }}
             >
               {NOW}

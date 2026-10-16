@@ -1,5 +1,7 @@
 import React from 'react';
 
+import { rem } from './constants';
+
 const EMBERS = [
   [12, 9, 0.2, 3], [24, 11, 2.5, 2], [37, 10, 1.1, 3], [49, 12, 4, 2],
   [58, 9.5, 0.7, 3], [68, 10.5, 3.2, 2], [79, 11.5, 1.8, 3], [90, 9, 5, 2],
@@ -37,12 +39,12 @@ const Ambient = ({
         position: 'absolute',
         top: '-30%',
         right: '-14%',
-        width: 360,
+        width: rem(360),
         height: '280%',
         pointerEvents: 'none',
         transform: 'rotate(35deg)',
         transformOrigin: 'top right',
-        filter: 'blur(14px)',
+        filter: `blur(${rem(14)})`,
         animation: 'pulse 7s ease-in-out infinite',
         animationPlayState: play,
       }}
@@ -86,12 +88,12 @@ const Ambient = ({
           style={{
             position: 'absolute',
             left: em.left,
-            bottom: -4,
-            width: em.size,
-            height: em.size,
+            bottom: rem(-4),
+            width: rem(em.size),
+            height: rem(em.size),
             borderRadius: '50%',
             background: ember,
-            boxShadow: `0 0 6px ${ember}`,
+            boxShadow: `0 0 ${rem(6)} ${ember}`,
             transition: 'background 1.4s ease, box-shadow 1.4s ease',
             animation: `drift ${em.dur} linear ${em.delay} infinite both`,
             animationPlayState: play,

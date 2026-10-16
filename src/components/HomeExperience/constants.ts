@@ -36,3 +36,18 @@ export const NOW = 'Today he focuses his time and energy in four areas: AI evalu
 export const EMAIL = 'samori.roberts@gmail.com';
 
 export const mix = (c: string, base: string, pct: number) => `color-mix(in oklab, ${c} ${pct}%, ${base})`;
+
+// Convert a spec px value to a rem string so it scales with the dynamic root
+// font-size (which is set by useViewport based on `S`). 1 rem = 16 base px.
+export const rem = (px: number) => `${px / 16}rem`;
+
+// Compose a multi-value shorthand (padding / margin) in rem.
+export const remPair = (y: number, x: number) => `${y / 16}rem ${x / 16}rem`;
+export const remQuad = (t: number, r: number, b: number, l: number) => `${t / 16}rem ${r / 16}rem ${b / 16}rem ${l / 16}rem`;
+
+// Hero-scaled px: scales by heroScale (S × B) via the --hero CSS variable
+// that useViewport sets on documentElement. Used for the title block and card
+// elements only, per the large-desktop handoff.
+export const heroPx = (px: number) => `calc(${px}px * var(--hero, 1))`;
+export const heroPxPair = (y: number, x: number) => `${heroPx(y)} ${heroPx(x)}`;
+export const heroPxQuad = (t: number, r: number, b: number, l: number) => `${heroPx(t)} ${heroPx(r)} ${heroPx(b)} ${heroPx(l)}`;

@@ -1,9 +1,12 @@
 import React from 'react';
 
-import { EASE_EMPH } from './constants';
+import { EASE_EMPH, rem } from './constants';
 
 interface DiamondProps {
-  size?: number;
+  // Number is treated as spec px and converted via rem (scales with S).
+  // String is passed through, so callers can pass heroPx(n) for hero-scaled
+  // diamonds inside the title block or cards.
+  size?: number | string;
   color?: string;
   filled?: boolean;
   glow?: boolean;
@@ -12,28 +15,31 @@ interface DiamondProps {
 
 export const Diamond = ({
   size = 5, color = '#cfe3ee', filled = true, glow = false, style,
-}: DiamondProps) => (
-  <div
-    style={{
-      width: size,
-      height: size,
-      transform: 'rotate(45deg)',
-      flex: '0 0 auto',
-      background: filled ? color : undefined,
-      border: filled ? undefined : `1px solid ${color}`,
-      boxShadow: glow ? `0 0 8px ${color}` : undefined,
-      ...style,
-    }}
-  />
-);
+}: DiamondProps) => {
+  const dim = typeof size === 'number' ? rem(size) : size;
+  return (
+    <div
+      style={{
+        width: dim,
+        height: dim,
+        transform: 'rotate(45deg)',
+        flex: '0 0 auto',
+        background: filled ? color : undefined,
+        border: filled ? undefined : `1px solid ${color}`,
+        boxShadow: glow ? `0 0 ${rem(8)} ${color}` : undefined,
+        ...style,
+      }}
+    />
+  );
+};
 
 export const NavChevron = ({ flip = false }: { flip?: boolean }) => (
   <svg
-    width={40}
-    height={40}
+    width={rem(40)}
+    height={rem(40)}
     viewBox="0 0 60 60"
     style={{
-      filter: 'drop-shadow(0 0 4px rgba(207,227,238,.45))',
+      filter: `drop-shadow(0 0 ${rem(4)} rgba(207,227,238,.45))`,
       transform: flip ? 'scaleX(-1)' : undefined,
     }}
     aria-hidden
@@ -48,30 +54,33 @@ export const NavChevron = ({ flip = false }: { flip?: boolean }) => (
 
 export const LogoCircle = ({
   src, size, fit = 'contain',
-}: { src: string; size: number | string; fit?: 'cover' | 'contain' }) => (
-  <div
-    data-logo="1"
-    style={{
-      position: 'relative',
-      width: size,
-      height: size,
-      borderRadius: '50%',
-      border: '1px solid rgba(143,166,180,.4)',
-      flex: '0 0 auto',
-      overflow: 'hidden',
-      transition: `width .65s ${EASE_EMPH}, height .65s ${EASE_EMPH}`,
-    }}
-  >
-    <img
-      src={src}
-      alt=""
+}: { src: string; size: number | string; fit?: 'cover' | 'contain' }) => {
+  const dim = typeof size === 'number' ? rem(size) : size;
+  return (
+    <div
+      data-logo="1"
       style={{
-        position: 'absolute',
-        inset: fit === 'contain' ? '18%' : 0,
-        width: fit === 'contain' ? '64%' : '100%',
-        height: fit === 'contain' ? '64%' : '100%',
-        objectFit: fit,
+        position: 'relative',
+        width: dim,
+        height: dim,
+        borderRadius: '50%',
+        border: '1px solid rgba(143,166,180,.4)',
+        flex: '0 0 auto',
+        overflow: 'hidden',
+        transition: `width .65s ${EASE_EMPH}, height .65s ${EASE_EMPH}`,
       }}
-    />
-  </div>
-);
+    >
+      <img
+        src={src}
+        alt=""
+        style={{
+          position: 'absolute',
+          inset: fit === 'contain' ? '18%' : 0,
+          width: fit === 'contain' ? '64%' : '100%',
+          height: fit === 'contain' ? '64%' : '100%',
+          objectFit: fit,
+        }}
+      />
+    </div>
+  );
+};
