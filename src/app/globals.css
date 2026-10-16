@@ -84,6 +84,13 @@ body {
   display: none;
 }
 
+/* Mobile: let swipes drive horizontal navigation without the browser interpreting them. */
+@media (max-width: 599px) {
+  html, body {
+    overscroll-behavior-x: contain;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   /* ambient layers: skip ember/mist/beam animation entirely */
   .amb-anim {

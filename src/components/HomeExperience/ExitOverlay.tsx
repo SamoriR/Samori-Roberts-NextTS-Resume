@@ -2,7 +2,7 @@ import React from 'react';
 
 import { CINZEL, CORMORANT, EMAIL } from './constants';
 
-const ExitOverlay = () => (
+const ExitOverlay = ({ isMobile }: { isMobile: boolean }) => (
   <div
     style={{
       position: 'absolute',
@@ -14,15 +14,18 @@ const ExitOverlay = () => (
       alignItems: 'center',
       justifyContent: 'center',
       gap: 16,
+      padding: '0 24px',
       animation: 'fadeIn 1.1s ease both',
     }}
   >
     <div
       style={{
         fontFamily: CINZEL,
-        fontSize: 22,
+        fontSize: isMobile ? 17 : 22,
         letterSpacing: '.2em',
         color: '#eef3f6',
+        textAlign: 'center',
+        textWrap: 'balance',
         animation: 'fadeIn 1s ease .9s both',
       }}
     >

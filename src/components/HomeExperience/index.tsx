@@ -14,9 +14,10 @@ import AboutPanel from './AboutPanel';
 import CardReel from './CardReel';
 import DetailsOverlay, { DetState, Phase } from './DetailsOverlay';
 import ExitOverlay from './ExitOverlay';
+import useViewport from './useViewport';
 
 const HomeExperience = () => {
-  const [scale, setScale] = useState(1);
+  const vp = useViewport();
   const [entered, setEntered] = useState(false);
   const [cardsOn, setCardsOn] = useState(false);
   const [viewMode, setViewMode] = useState<'cards' | 'about'>('cards');
@@ -33,17 +34,24 @@ const HomeExperience = () => {
   const [paused, setPaused] = useState(false);
   const [hover, setHover] = useState<Job | null>(null);
   const [det, setDet] = useState<DetState | null>(null);
+  const [swapping, setSwapping] = useState(false);
 
   const sceneRef = useRef<HTMLDivElement>(null);
   const reelRef = useRef<HTMLDivElement | null>(null);
   const nameRef = useRef<HTMLButtonElement>(null);
   const detTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const swapTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   const T = short ? SHORT_T : FULL_T;
 
   const clearDetTimers = () => {
     detTimers.current.forEach(clearTimeout);
     detTimers.current = [];
+  };
+
+  const clearSwapTimers = () => {
+    swapTimers.current.forEach(clearTimeout);
+    swapTimers.current = [];
   };
 
   const measureReel = useCallback(() => {
@@ -58,17 +66,8 @@ const HomeExperience = () => {
     if (el) setTimeout(measureReel, 50);
   }, [measureReel]);
 
-  // Viewport scaling: the design is a 860x500 stage; scale values proportionally.
-  useEffect(() => {
-    const onResize = () => {
-      const s = Math.min(window.innerWidth / 860, window.innerHeight / 500);
-      setScale(Math.min(Math.max(s, 0.45), 2.4));
-      measureReel();
-    };
-    onResize();
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
-  }, [measureReel]);
+  // Re-measure the reel on viewport changes (useViewport already triggers a render).
+  useEffect(() => { measureReel(); }, [vp.w, vp.h, measureReel]);
 
   useEffect(() => {
     const onVis = () => setPaused(document.hidden);
@@ -125,6 +124,8 @@ const HomeExperience = () => {
     setDet((d) => {
       if (!d || d.phase !== 'nav') return d;
       clearDetTimers();
+      clearSwapTimers();
+      setSwapping(false);
       detTimers.current.push(setTimeout(() => {
         setDet(null);
         setReelKey((k) => k + 1);
@@ -138,6 +139,8 @@ const HomeExperience = () => {
     setLeaving(true);
     setTimeout(() => {
       clearDetTimers();
+      clearSwapTimers();
+      setSwapping(false);
       setDet(null);
       setTitleOff(true);
       setEntered(false);
@@ -159,32 +162,26 @@ const HomeExperience = () => {
     const scene = sceneRef.current;
     if (det || !scene || !cardEl) return;
     const s = scene.getBoundingClientRect();
-    const sc = s.width / scene.offsetWidth || 1;
     const r = cardEl.getBoundingClientRect();
     const rect = {
-      l: (r.left - s.left) / sc,
-      t: (r.top - s.top) / sc,
-      w: r.width / sc,
-      h: r.height / sc,
+      l: r.left - s.left,
+      t: r.top - s.top,
+      w: r.width,
+      h: r.height,
       lx: 0,
       ly: 0,
     };
     const lg = cardEl.querySelector('[data-logo]');
     if (lg) {
       const g = lg.getBoundingClientRect();
-      rect.lx = ((g.left + g.width / 2) - (r.left + r.width / 2)) / sc;
-      rect.ly = ((g.top + g.height / 2) - (r.top + r.height / 2)) / sc;
+      rect.lx = (g.left + g.width / 2) - (r.left + r.width / 2);
+      rect.ly = (g.top + g.height / 2) - (r.top + r.height / 2);
     }
-    let nav = { l: 279, t: 20 };
-    const name = nameRef.current;
-    if (name) {
-      const n = name.getBoundingClientRect();
-      nav = {
-        // clear the name plus the 5px diamond that sits 12px left of the logo
-        l: (n.right - s.left) / sc + 30,
-        t: (n.top - s.top) / sc + (n.height / sc - 28) / 2,
-      };
-    }
+    // Derived from the nav name's rendered position so the breadcrumb sits past it.
+    const nav = {
+      l: vp.navLeft + 628 * vp.navScale + 25,
+      t: vp.navTop + 62 * vp.navScale - 14,
+    };
     clearDetTimers();
     setDet({
       job, rect, W: scene.offsetWidth, H: scene.offsetHeight, nav, phase: 'start',
@@ -193,7 +190,41 @@ const HomeExperience = () => {
     detTimers.current.push(setTimeout(() => phase('full'), 380));
     detTimers.current.push(setTimeout(() => phase('logo'), 930));
     detTimers.current.push(setTimeout(() => phase('nav'), 1380));
-  }, [det]);
+  }, [det, vp.navLeft, vp.navScale, vp.navTop]);
+
+  // Keep the overlay sized to the live viewport (and nav slot repositioned on breakpoint flip).
+  useEffect(() => {
+    if (!det) return;
+    const scene = sceneRef.current;
+    setDet((d) => (d ? {
+      ...d,
+      W: scene ? scene.offsetWidth : d.W,
+      H: scene ? scene.offsetHeight : d.H,
+      nav: {
+        l: vp.navLeft + 628 * vp.navScale + 25,
+        t: vp.navTop + 62 * vp.navScale - 14,
+      },
+    } : d));
+    // We intentionally omit `det` from deps: it would re-run on every job swap.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vp.w, vp.h, vp.navLeft, vp.navTop, vp.navScale]);
+
+  const goToJob = useCallback((target: Job) => {
+    if (!det || det.phase !== 'nav' || swapping) return;
+    clearSwapTimers();
+    setSwapping(true);
+    swapTimers.current.push(setTimeout(() => {
+      setDet((d) => (d ? { ...d, job: target } : d));
+    }, 420));
+    swapTimers.current.push(setTimeout(() => setSwapping(false), 720));
+  }, [det, swapping]);
+
+  const neighborList = jobs.filter((j) => filter === 'All' || j.type === filter);
+  const detIdx = det ? neighborList.findIndex((j) => j.company === det.job.company) : -1;
+  const prevJob = detIdx > 0 ? neighborList[detIdx - 1] : null;
+  const nextJob = detIdx >= 0 && detIdx < neighborList.length - 1 ? neighborList[detIdx + 1] : null;
+  const goPrev = useCallback(() => { if (prevJob) goToJob(prevJob); }, [prevJob, goToJob]);
+  const goNext = useCallback(() => { if (nextJob) goToJob(nextJob); }, [nextJob, goToJob]);
 
   // Global keyboard: menu arrows, intro skip, Escape, exit screen.
   useEffect(() => {
@@ -221,11 +252,24 @@ const HomeExperience = () => {
       if (ev.key === 'Escape') {
         if (det) closeDet();
         else if (viewMode === 'about') setViewMode('cards');
+        return;
+      }
+      if (det && det.phase === 'nav' && !swapping) {
+        if (ev.key === 'ArrowLeft') {
+          ev.preventDefault();
+          goPrev();
+        } else if (ev.key === 'ArrowRight') {
+          ev.preventDefault();
+          goNext();
+        }
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [exitOpen, entered, introDone, sel, det, viewMode, skipIntro, pickMenu, closeDet]);
+  }, [
+    exitOpen, entered, introDone, sel, det, viewMode, swapping,
+    skipIntro, pickMenu, closeDet, goPrev, goNext,
+  ]);
 
   // Click anywhere during the intro restarts it with the short timing.
   useEffect(() => {
@@ -261,20 +305,20 @@ const HomeExperience = () => {
   const visibleJobs = jobs.filter((j) => filter === 'All' || j.type === filter);
 
   return (
-    <div style={{
-      position: 'fixed', inset: 0, overflow: 'hidden', background: '#000',
-    }}
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        height: '100dvh',
+        overflow: 'hidden',
+        background: '#000',
+      }}
     >
       <div
         ref={sceneRef}
         style={{
           position: 'absolute',
-          top: 0,
-          left: 0,
-          width: `calc(100vw / ${scale})`,
-          height: `calc(100vh / ${scale})`,
-          transform: `scale(${scale})`,
-          transformOrigin: 'top left',
+          inset: 0,
           background: 'radial-gradient(ellipse at 50% 40%, #10161c 0%, #05070a 60%, #000 100%)',
           animation: 'fadeIn 1.2s ease both',
           overflow: 'hidden',
@@ -294,9 +338,11 @@ const HomeExperience = () => {
               style={{
                 position: 'absolute',
                 zIndex: 5,
-                left: entered ? 28 : '50%',
-                top: entered ? 12 : '24%',
-                transform: entered ? 'translateX(0) scale(.36)' : 'translateX(-50%) scale(1)',
+                left: entered ? vp.navLeft : '50%',
+                top: entered ? vp.navTop : vp.titleTop,
+                transform: entered
+                  ? `translateX(0) scale(${vp.navScale})`
+                  : `translateX(${-50 * vp.titleScale}%) scale(${vp.titleScale})`,
                 transformOrigin: 'top left',
                 opacity: contentOpacity,
                 transition: `left 1.1s ${EASE_EMPH}, top 1.1s ${EASE_EMPH}, transform 1.1s ${EASE_EMPH}, opacity .6s ease`,
@@ -387,7 +433,7 @@ const HomeExperience = () => {
                 position: 'absolute',
                 left: 0,
                 right: 0,
-                top: '58%',
+                top: vp.menuTop,
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
@@ -421,7 +467,8 @@ const HomeExperience = () => {
                       alignItems: 'center',
                       gap: 14,
                       cursor: 'pointer',
-                      padding: '4px 8px',
+                      // Mobile tap target is at least 44px tall.
+                      padding: vp.isMobile ? '11px 8px' : '4px 8px',
                       background: 'none',
                       border: 'none',
                       outline: 'none',
@@ -468,7 +515,10 @@ const HomeExperience = () => {
                   animation: `pulse 2.4s ease-in-out ${T.hint} infinite both`,
                 }}
               >
-                {short ? 'SELECT TO BEGIN' : 'SELECT TO BEGIN  ·  CLICK TO SKIP'}
+                {(() => {
+                  if (short) return 'SELECT TO BEGIN';
+                  return vp.isMobile ? 'TAP TO SKIP' : 'SELECT TO BEGIN  ·  CLICK TO SKIP';
+                })()}
               </span>
             </div>
           </React.Fragment>
@@ -486,7 +536,7 @@ const HomeExperience = () => {
             }}
           >
             {viewMode === 'about' ? (
-              <AboutPanel />
+              <AboutPanel w={vp.w} />
             ) : (
               <CardReel
                 reelKey={reelKey}
@@ -500,6 +550,7 @@ const HomeExperience = () => {
                 onScroll={measureReel}
                 setReelEl={setReelEl}
                 underStyle={underStyle}
+                isMobile={vp.isMobile}
               />
             )}
 
@@ -520,11 +571,23 @@ const HomeExperience = () => {
               {`© ${new Date().getFullYear()} Samori Roberts. All rights reserved.`}
             </div>
 
-            {det && <DetailsOverlay det={det} onClose={closeDet} />}
+            {det && (
+              <DetailsOverlay
+                det={det}
+                onClose={closeDet}
+                prevJob={prevJob}
+                nextJob={nextJob}
+                onPrev={goPrev}
+                onNext={goNext}
+                swapping={swapping}
+                w={vp.w}
+                isMobile={vp.isMobile}
+              />
+            )}
           </div>
         )}
 
-        {exitOpen && <ExitOverlay />}
+        {exitOpen && <ExitOverlay isMobile={vp.isMobile} />}
       </div>
     </div>
   );

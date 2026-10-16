@@ -22,22 +22,33 @@ const linkButtonOff = (el: HTMLElement) => {
   });
 };
 
-const AboutPanel = () => (
-  <div
-    style={{
-      position: 'absolute',
-      left: 0,
-      right: 0,
-      top: 100,
-      bottom: 44,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: 52,
-      pointerEvents: 'auto',
-      padding: '0 60px',
-    }}
-  >
+const AboutPanel = ({ w }: { w: number }) => {
+  const column = w < 680;
+  const narrow = w < 760;
+  let gap = 52;
+  if (column) gap = 28;
+  else if (narrow) gap = 36;
+  let padding = '0 60px';
+  if (column) padding = '12px 24px 24px';
+  else if (narrow) padding = '0 32px';
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        top: 100,
+        bottom: 44,
+        display: 'flex',
+        flexDirection: column ? 'column' : 'row',
+        alignItems: 'center',
+        justifyContent: column ? 'flex-start' : 'center',
+        gap,
+        pointerEvents: 'auto',
+        padding,
+        overflowY: 'auto',
+      }}
+    >
     <div
       className="rm-fade"
       style={{
@@ -140,6 +151,7 @@ const AboutPanel = () => (
         display: 'flex',
         flexDirection: 'column',
         gap: 14,
+        width: '100%',
         maxWidth: 440,
         minWidth: 0,
         maxHeight: '100%',
@@ -228,6 +240,7 @@ const AboutPanel = () => (
       </div>
     </div>
   </div>
-);
+  );
+};
 
 export default AboutPanel;

@@ -2,9 +2,9 @@ import React from 'react';
 
 import { Job } from '@/data/jobs';
 import {
-  CINZEL, CORMORANT, EASE_EMPH, mix,
+  CINZEL, CORMORANT, EASE_EMPH, EASE_OUT, mix,
 } from './constants';
-import { Diamond, LogoCircle } from './ui';
+import { Diamond, LogoCircle, NavChevron } from './ui';
 
 export type Phase = 'start' | 'full' | 'logo' | 'nav' | 'closing';
 
@@ -20,9 +20,123 @@ export interface DetState {
 interface DetailsOverlayProps {
   det: DetState;
   onClose: () => void;
+  prevJob: Job | null;
+  nextJob: Job | null;
+  onPrev: () => void;
+  onNext: () => void;
+  swapping: boolean;
+  w: number;
+  isMobile: boolean;
 }
 
-const DetailsOverlay = ({ det: d, onClose }: DetailsOverlayProps) => {
+interface NavControlProps {
+  job: Job | null;
+  flip?: boolean;
+  onClick: () => void;
+  ariaLabel: string;
+}
+
+const NavControl = ({
+  job, flip = false, onClick, ariaLabel,
+}: NavControlProps) => {
+  const disabled = !job;
+  return (
+    <div
+      role="button"
+      tabIndex={disabled ? -1 : 0}
+      aria-label={ariaLabel}
+      onClick={(ev) => {
+        ev.stopPropagation();
+        if (!disabled) onClick();
+      }}
+      onKeyDown={(ev) => {
+        if (disabled) return;
+        if (ev.key === 'Enter' || ev.key === ' ') {
+          ev.preventDefault();
+          ev.stopPropagation();
+          onClick();
+        }
+      }}
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 10,
+        padding: 8,
+        cursor: disabled ? 'default' : 'pointer',
+        opacity: disabled ? 0.18 : 1,
+        pointerEvents: disabled ? 'none' : 'auto',
+        outline: 'none',
+        transition: 'opacity .3s, filter .3s',
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.filter = 'drop-shadow(0 0 10px rgba(207,227,238,.55))';
+        const label = e.currentTarget.lastElementChild as HTMLElement | null;
+        if (label) label.style.color = '#ffffff';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.filter = '';
+        const label = e.currentTarget.lastElementChild as HTMLElement | null;
+        if (label) label.style.color = '#8fa6b4';
+      }}
+      onFocus={(e) => {
+        e.currentTarget.style.filter = 'drop-shadow(0 0 10px rgba(207,227,238,.55))';
+        const label = e.currentTarget.lastElementChild as HTMLElement | null;
+        if (label) label.style.color = '#ffffff';
+      }}
+      onBlur={(e) => {
+        e.currentTarget.style.filter = '';
+        const label = e.currentTarget.lastElementChild as HTMLElement | null;
+        if (label) label.style.color = '#8fa6b4';
+      }}
+    >
+      <NavChevron flip={flip} />
+      <div
+        style={{
+          fontFamily: CINZEL,
+          fontSize: 8,
+          letterSpacing: '.22em',
+          textTransform: 'uppercase',
+          color: '#8fa6b4',
+          transition: 'color .3s',
+          minHeight: 10,
+        }}
+      >
+        {job ? job.company : ''}
+      </div>
+    </div>
+  );
+};
+
+const DetailsOverlay = ({
+  det: d, onClose, prevJob, nextJob, onPrev, onNext, swapping, w, isMobile,
+}: DetailsOverlayProps) => {
+  const isTabletWidth = w < 760;
+  const bodyPadding = (() => {
+    if (isMobile) return '0 24px';
+    if (isTabletWidth) return '0 80px';
+    return '0 92px';
+  })();
+  const bodyTop = isMobile ? 72 : 84;
+  const bodyBottom = isMobile ? 100 : 34;
+  const titleSize = isMobile ? 24 : 28;
+  const openingLogo = isMobile ? 62 : 44;
+
+  const touch = React.useRef<{ x: number; y: number } | null>(null);
+  const onTouchStart = (ev: React.TouchEvent) => {
+    const t = ev.touches[0];
+    touch.current = { x: t.clientX, y: t.clientY };
+  };
+  const onTouchEnd = (ev: React.TouchEvent) => {
+    if (!touch.current || d.phase !== 'nav' || swapping) return;
+    const t = ev.changedTouches[0];
+    const dx = t.clientX - touch.current.x;
+    const dy = t.clientY - touch.current.y;
+    touch.current = null;
+    if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy)) return;
+    if (dx < 0) onNext();
+    else onPrev();
+  };
   const full = d.phase !== 'start';
   const navP = d.phase === 'nav';
   const inNav = d.phase === 'logo' || d.phase === 'nav' || d.phase === 'closing';
@@ -39,7 +153,7 @@ const DetailsOverlay = ({ det: d, onClose }: DetailsOverlayProps) => {
     logoLeft = full || !d.rect.lx ? '50%' : `calc(50% + ${d.rect.lx}px)`;
     logoTop = full || !d.rect.ly ? '50%' : `calc(50% + ${d.rect.ly}px)`;
   }
-  let logoSize = 44;
+  let logoSize = openingLogo;
   if (full) logoSize = 64;
   if (inNav) logoSize = 28;
 
@@ -61,6 +175,8 @@ const DetailsOverlay = ({ det: d, onClose }: DetailsOverlayProps) => {
         overflow: 'hidden',
         pointerEvents: 'auto',
       }}
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
     >
       <div
         style={{
@@ -120,7 +236,8 @@ const DetailsOverlay = ({ det: d, onClose }: DetailsOverlayProps) => {
           left: logoLeft,
           top: logoTop,
           transform: inNav ? 'translate(0,0)' : 'translate(-50%,-50%)',
-          transition: `left .65s ${EASE_EMPH}, top .65s ${EASE_EMPH}, transform .65s ${EASE_EMPH}`,
+          opacity: navP && swapping ? 0 : 1,
+          transition: `left .65s ${EASE_EMPH}, top .65s ${EASE_EMPH}, transform .65s ${EASE_EMPH}, opacity .4s ease`,
         }}
       >
         <Diamond
@@ -167,28 +284,31 @@ const DetailsOverlay = ({ det: d, onClose }: DetailsOverlayProps) => {
         >
           RETURN
         </span>
-        <span style={{ fontFamily: CORMORANT, fontSize: 12, color: '#6f8390' }}>esc</span>
+        {!isMobile && (
+          <span style={{ fontFamily: CORMORANT, fontSize: 12, color: '#6f8390' }}>esc</span>
+        )}
       </button>
       <div
+        key={d.job.company}
         style={{
           position: 'absolute',
           left: 0,
           right: 0,
-          top: 84,
-          bottom: 34,
-          padding: '0 64px',
+          top: bodyTop,
+          bottom: bodyBottom,
+          padding: bodyPadding,
           boxSizing: 'border-box',
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
           gap: '24px 56px',
-          opacity: navP ? 1 : 0,
-          pointerEvents: navP ? 'auto' : 'none',
-          transition: 'opacity .8s ease',
+          opacity: navP && !swapping ? 1 : 0,
+          pointerEvents: navP && !swapping ? 'auto' : 'none',
+          transition: navP ? 'opacity .4s ease' : 'opacity .8s ease',
           overflowY: 'auto',
         }}
       >
         <div
-          className="reel"
+          className="reel rm-fade"
           style={{
             display: 'flex',
             flexDirection: 'column',
@@ -200,6 +320,7 @@ const DetailsOverlay = ({ det: d, onClose }: DetailsOverlayProps) => {
             // room for diamond glow so the scroll container does not clip it
             paddingLeft: 8,
             marginLeft: -8,
+            animation: `fadeUp .7s ${EASE_OUT} both`,
           }}
         >
           <div
@@ -212,7 +333,7 @@ const DetailsOverlay = ({ det: d, onClose }: DetailsOverlayProps) => {
           <div
             style={{
               fontFamily: CINZEL,
-              fontSize: 28,
+              fontSize: titleSize,
               fontWeight: 600,
               letterSpacing: '.06em',
               lineHeight: 1.15,
@@ -253,9 +374,16 @@ const DetailsOverlay = ({ det: d, onClose }: DetailsOverlayProps) => {
           </p>
         </div>
         {d.job.work.length > 0 && (
-          <div style={{
-            display: 'flex', flexDirection: 'column', gap: 10, minWidth: 0, minHeight: 0,
-          }}
+          <div
+            className="rm-fade"
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 10,
+              minWidth: 0,
+              minHeight: 0,
+              animation: `fadeUp .7s ${EASE_OUT} .12s both`,
+            }}
           >
             <div style={{
               fontFamily: CINZEL, fontSize: 10, letterSpacing: '.32em', color: '#8fa6b4', flex: '0 0 auto',
@@ -278,9 +406,9 @@ const DetailsOverlay = ({ det: d, onClose }: DetailsOverlayProps) => {
                 maskImage: 'linear-gradient(180deg, #000 calc(100% - 28px), transparent)',
               }}
             >
-              {d.job.work.map((w) => (
+              {d.job.work.map((bullet) => (
                 <div
-                  key={w}
+                  key={bullet}
                   style={{
                     display: 'flex',
                     alignItems: 'flex-start',
@@ -296,13 +424,53 @@ const DetailsOverlay = ({ det: d, onClose }: DetailsOverlayProps) => {
                     fontFamily: CORMORANT, fontSize: 16, lineHeight: 1.45, color: '#c9d6de', textWrap: 'pretty',
                   }}
                   >
-                    {w}
+                    {bullet}
                   </div>
                 </div>
               ))}
             </div>
           </div>
         )}
+      </div>
+
+      <div
+        style={{
+          position: 'absolute',
+          left: isMobile ? 10 : 16,
+          top: isMobile ? 'auto' : '50%',
+          bottom: isMobile ? 12 : 'auto',
+          transform: isMobile ? 'none' : 'translateY(-50%)',
+          zIndex: 6,
+          opacity: navP && !swapping ? 1 : 0,
+          pointerEvents: navP && !swapping ? 'auto' : 'none',
+          transition: 'opacity .6s ease',
+        }}
+      >
+        <NavControl
+          job={prevJob}
+          onClick={onPrev}
+          ariaLabel="Previous"
+        />
+      </div>
+      <div
+        style={{
+          position: 'absolute',
+          right: isMobile ? 10 : 16,
+          top: isMobile ? 'auto' : '50%',
+          bottom: isMobile ? 12 : 'auto',
+          transform: isMobile ? 'none' : 'translateY(-50%)',
+          zIndex: 6,
+          opacity: navP && !swapping ? 1 : 0,
+          pointerEvents: navP && !swapping ? 'auto' : 'none',
+          transition: 'opacity .6s ease',
+        }}
+      >
+        <NavControl
+          job={nextJob}
+          flip
+          onClick={onNext}
+          ariaLabel="Next"
+        />
       </div>
     </div>
   );
