@@ -96,17 +96,6 @@ const HomeExperience = () => {
     return () => clearTimeout(t);
   }, [entered, titleOff, titleKey, short, introDone]);
 
-  const skipIntro = useCallback(() => {
-    setShort(true);
-    sessionStorage.setItem('introMode', 'short');
-    setIntroDone(false);
-    setTitleOff(true);
-    setTimeout(() => {
-      setTitleOff(false);
-      setTitleKey((k) => k + 1);
-    }, 40);
-  }, []);
-
   const pickMenu = useCallback((i: number) => {
     const label = MENU[i];
     if (label === 'Exit') {
@@ -238,10 +227,9 @@ const HomeExperience = () => {
         return;
       }
       if (!entered) {
-        if (!introDone) {
-          skipIntro();
-          return;
-        }
+        // Ignore all keyboard input until the title animation finishes —
+        // menu interaction only unlocks once introDone fires.
+        if (!introDone) return;
         if (ev.key === 'ArrowDown') {
           ev.preventDefault();
           setSel((v) => (v + 1) % 3);
@@ -272,16 +260,8 @@ const HomeExperience = () => {
     return () => window.removeEventListener('keydown', onKey);
   }, [
     exitOpen, entered, introDone, sel, det, viewMode, swapping,
-    skipIntro, pickMenu, closeDet, goPrev, goNext,
+    pickMenu, closeDet, goPrev, goNext,
   ]);
-
-  // Click anywhere during the intro restarts it with the short timing.
-  useEffect(() => {
-    if (entered || introDone) return undefined;
-    const onDown = () => skipIntro();
-    window.addEventListener('pointerdown', onDown);
-    return () => window.removeEventListener('pointerdown', onDown);
-  }, [entered, introDone, skipIntro]);
 
   const swapFilter = (value: 'All' | JobType) => {
     if (value === filter) return;
@@ -523,10 +503,7 @@ const HomeExperience = () => {
                   animation: `pulse 2.4s ease-in-out ${T.hint} infinite both`,
                 }}
               >
-                {(() => {
-                  if (short) return 'SELECT TO BEGIN';
-                  return vp.isMobile ? 'TAP TO SKIP' : 'SELECT TO BEGIN  ·  CLICK TO SKIP';
-                })()}
+                SELECT TO BEGIN
               </span>
             </div>
           </React.Fragment>
